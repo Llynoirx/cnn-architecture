@@ -38,10 +38,16 @@ class Conv2d_stride1():
             Z (np.array): (batch_size, out_channels, output_height, output_width)
         """
         self.A = A
+        N, _, H_in, W_in = A.shape
+        H_out =  H_in - self.kernel_size + 1
+        W_out =  W_in - self.kernel_size + 1
 
-        Z = None  # TODO
+        Z = np.zeros((N, self.out_channels, H_out, W_out))
 
-        return NotImplemented
+        for h, w in np.ndindex(H_out, W_out):
+            Z[:, :, h, w] = np.tensordot(self.A[:, :, h:h+self.kernel_size, w:w+self.kernel_size], 
+                                         self.W, axes=((1, 2, 3), (1, 2, 3))) + self.b
+        return Z
 
     def backward(self, dLdZ):
         """
@@ -51,11 +57,31 @@ class Conv2d_stride1():
             dLdA (np.array): (batch_size, in_channels, input_height, input_width)
         """
 
-        self.dLdW = None  # TODO
-        self.dLdb = None  # TODO
-        dLdA = None  # TODO
+        _, _, H_in, W_in = self.A.shape
+        _, _, H_out, W_out = dLdZ.shape
 
-        return NotImplemented
+        # Find dLdb
+        self.dLdb = np.sum(dLdZ, axis=(0, 2, 3))
+
+        # Find dLdW
+        self.dLdW = np.zeros(self.W.shape)
+        for i, j in np.ndindex(self.kernel_size, self.kernel_size):
+            self.dLdW[:, :, i, j] = np.tensordot(dLdZ, self.A[:, :, i:i+H_out, j:j+W_out], 
+                                                 axes=((0, 2, 3), (0, 2, 3)))
+        
+        # Find dLdA
+        dLdZ_padded = np.pad(dLdZ, ((0, 0), (0, 0), 
+                                    (self.kernel_size-1, self.kernel_size-1), 
+                                    (self.kernel_size-1, self.kernel_size-1)), 
+                            'constant', constant_values=0)
+        W_flipped = np.flip(self.W, axis=(2, 3))
+
+        dLdA = np.zeros(self.A.shape)
+        for h, w in np.ndindex(H_in, W_in):
+            dLdA[:, :, h, w] = np.tensordot(dLdZ_padded[:, :, h:h+self.kernel_size, w:w+self.kernel_size], 
+                                            W_flipped, axes=((1, 2, 3), (0, 2, 3)))
+
+        return dLdA
 
 
 class Conv2d():
@@ -66,8 +92,8 @@ class Conv2d():
         self.pad = padding
 
         # Initialize Conv2d() and Downsample2d() isntance
-        self.conv2d_stride1 = None  # TODO
-        self.downsample2d = None  # TODO
+        self.conv2d_stride1 = Conv2d_stride1(in_channels, out_channels, kernel_size, weight_init_fn, bias_init_fn)
+        self.downsample2d = Downsample1d(stride)
 
     def forward(self, A):
         """
@@ -78,15 +104,16 @@ class Conv2d():
         """
 
         # Pad the input appropriately using np.pad() function
-        # TODO
+        A_padded = np.pad(A, ((0, 0), (0, 0), (0, 0), (self.pad, self.pad, self.pad)), 
+                         'constant', constant_values=(0,0))
 
-        # Call Conv2d_stride1
-        # TODO
+        # Call Conv1d_stride1
+        Z_stride1 = self.conv2d_stride1.forward(A_padded)
 
         # downsample
-        Z = None  # TODO
+        Z = self.downsample2d.forward(Z_stride1)
 
-        return NotImplemented
+        return Z
 
     def backward(self, dLdZ):
         """
@@ -97,12 +124,12 @@ class Conv2d():
         """
 
         # Call downsample1d backward
-        # TODO
+        dLdZ_stride1 = self.downsample2d.backward(dLdZ)
 
-        # Call Conv2d_stride1 backward
-        dLdA = None  # TODO
+        # Call Conv1d_stride1 backward
+        dLdA = self.conv1d_stride2.backward(dLdZ_stride1)
 
         # Unpad the gradient
-        # TODO
+        dLdA_unpadded = dLdA[self.pad:-self.pad, self.pad:-self.pad]
 
-        return NotImplemented
+        return dLdA_unpadded
