@@ -18,7 +18,7 @@ class Upsample1d():
         """
 
         N, C, W_in = A.shape
-        W_out = self.upsampling_factor * (W_in - 1) + 1
+        W_out = (W_in - 1)*self.upsampling_factor + 1
         Z = np.zeros((N, C, W_out))
 
         idx = np.ndindex(N, C, W_in)
@@ -36,7 +36,7 @@ class Upsample1d():
         """
 
         N, C, W_out = dLdZ.shape
-        W_in = ((W_out - 1)//self.upsampling_factor) + 1
+        W_in = (W_out - 1)//self.upsampling_factor + 1
         dLdA = np.zeros((N, C, W_in))
 
         idx = np.ndindex(N, C, W_in)
@@ -44,7 +44,6 @@ class Upsample1d():
             dLdA[n, c, w] = dLdZ[n, c, w*self.upsampling_factor]
 
         return dLdA
-
 
 class Downsample1d():
 
@@ -59,9 +58,14 @@ class Downsample1d():
             Z (np.array): (batch_size, in_channels, output_width)
         """
 
-        Z = None  # TODO
+        N, C, self.W_in = A.shape
+        W_out = (self.W_in - 1)//self.downsampling_factor + 1
+        Z = np.zeros((N, C, W_out))
 
-        return NotImplemented
+        idx = np.ndindex(N, C, W_out)
+        for n, c, w in idx:
+            Z[n, c, w] = A[n, c, w*self.downsampling_factor]
+        return Z
 
     def backward(self, dLdZ):
         """
@@ -70,10 +74,14 @@ class Downsample1d():
         Return:
             dLdA (np.array): (batch_size, in_channels, input_width)
         """
+        N, C, W_out = dLdZ.shape
+        dLdA = np.zeros((N, C, self.W_in))
 
-        dLdA = None  # TODO
+        idx = np.ndindex(N, C, W_out)
+        for n, c, w in idx:
+            dLdA[n, c, w*self.downsampling_factor] = dLdZ[n, c, w]
 
-        return NotImplemented
+        return dLdA
 
 
 class Upsample2d():
