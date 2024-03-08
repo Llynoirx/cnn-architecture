@@ -93,7 +93,7 @@ class Conv2d():
 
         # Initialize Conv2d() and Downsample2d() isntance
         self.conv2d_stride1 = Conv2d_stride1(in_channels, out_channels, kernel_size, weight_init_fn, bias_init_fn)
-        self.downsample2d = Downsample1d(stride)
+        self.downsample2d = Downsample2d(stride)
 
     def forward(self, A):
         """
@@ -104,10 +104,10 @@ class Conv2d():
         """
 
         # Pad the input appropriately using np.pad() function
-        A_padded = np.pad(A, ((0, 0), (0, 0), (0, 0), (self.pad, self.pad, self.pad)), 
+        A_padded = np.pad(A, ((0, 0), (0, 0), (self.pad, self.pad), (self.pad, self.pad)), 
                          'constant', constant_values=(0,0))
 
-        # Call Conv1d_stride1
+        # Call Conv2d_stride1
         Z_stride1 = self.conv2d_stride1.forward(A_padded)
 
         # downsample
@@ -126,10 +126,10 @@ class Conv2d():
         # Call downsample1d backward
         dLdZ_stride1 = self.downsample2d.backward(dLdZ)
 
-        # Call Conv1d_stride1 backward
-        dLdA = self.conv1d_stride2.backward(dLdZ_stride1)
+        # Call Conv2d_stride1 backward
+        dLdA = self.conv2d_stride1.backward(dLdZ_stride1)
 
         # Unpad the gradient
-        dLdA_unpadded = dLdA[self.pad:-self.pad, self.pad:-self.pad]
+        dLdA_unpadded = dLdA[:, :, self.pad:-self.pad, self.pad:-self.pad]
 
         return dLdA_unpadded
