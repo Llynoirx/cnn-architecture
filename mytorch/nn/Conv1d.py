@@ -41,7 +41,7 @@ class Conv1d_stride1():
         Z = np.zeros((N, self.out_channels, output_size))
 
         for s in range(output_size):
-            Z[:, :, s] = np.tensordot(self.A[:, :, s:s+self.kernel_size], self.W, axes=([1, 2], [1, 2])) + self.b
+            Z[:, :, s] = np.tensordot(self.A[:, :, s:s+self.kernel_size], self.W, axes=((1, 2), (1, 2))) + self.b
         return Z
 
     def backward(self, dLdZ):
@@ -82,8 +82,8 @@ class Conv1d():
         self.pad = padding
 
         # Initialize Conv1d() and Downsample1d() isntance
-        self.conv1d_stride1 = None  # TODO
-        self.downsample1d = None  # TODO
+        self.conv1d_stride1 = Conv1d_stride1(in_channels, out_channels, kernel_size, weight_init_fn, bias_init_fn)
+        self.downsample1d = Downsample1d(stride)
 
     def forward(self, A):
         """
@@ -94,15 +94,15 @@ class Conv1d():
         """
 
         # Pad the input appropriately using np.pad() function
-        # A_padded = np.pad(A, ((0, 0), (0, 0), (self.kernel_size-1, self.kernel_size-1)), 'constant', constant_values=(0,0))
+        A_padded = np.pad(A, ((0, 0), (0, 0), (self.pad, self.pad)), 'constant', constant_values=(0,0))
 
-        # # Call Conv1d_stride1
-        # Z_stride1 = self.conv1d_stride1.forward(A_padded)
+        # Call Conv1d_stride1
+        Z_stride1 = self.conv1d_stride1.forward(A_padded)
 
-        # # downsample
-        # Z = self.downsample1d.forward(Z_stride1)
+        # downsample
+        Z = self.downsample1d.forward(Z_stride1)
 
-        return NotImplemented
+        return Z
 
     def backward(self, dLdZ):
         """
@@ -112,12 +112,12 @@ class Conv1d():
             dLdA (np.array): (batch_size, in_channels, input_size)
         """
         # Call downsample1d backward
-        # dLdZ_stride1 = self.downsampled1d.backward(dLdZ)
+        dLdZ_stride1 = self.downsample1d.backward(dLdZ)
 
-        # # Call Conv1d_stride1 backward
-        # dLdA = self.conv1d_stride1.backward(dLdZ_stride1)
+        # Call Conv1d_stride1 backward
+        dLdA = self.conv1d_stride1.backward(dLdZ_stride1)
 
-        # # Unpad the gradient
-        # dLdA_unpadded =
+        # Unpad the gradient
+        dLdA_unpadded = dLdA[..., self.pad:-self.pad]
 
         return dLdA_unpadded
