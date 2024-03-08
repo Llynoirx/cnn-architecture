@@ -4,7 +4,7 @@
 import numpy as np
 from resampling import *
 
-
+# convolving the input with a kernel in just 1 direction
 class Conv1d_stride1():
     def __init__(self, in_channels, out_channels, kernel_size,
                  weight_init_fn=None, bias_init_fn=None):
@@ -35,10 +35,14 @@ class Conv1d_stride1():
             Z (np.array): (batch_size, out_channels, output_size)
         """
         self.A = A
+        N, _, input_size = A.shape
+        output_size =  input_size - self.kernel_size + 1
 
-        Z = None  # TODO
+        Z = np.zeros((N, self.out_channels, output_size))
 
-        return NotImplemented
+        for s in range(output_size):
+            Z[:, :, s] = np.tensordot(self.A[:, :, s:s+self.kernel_size], self.W, axes=([1, 2], [1, 2])) + self.b
+        return Z
 
     def backward(self, dLdZ):
         """
@@ -47,12 +51,26 @@ class Conv1d_stride1():
         Return:
             dLdA (np.array): (batch_size, in_channels, input_size)
         """
+        input_size = self.A.shape[2]
+        output_size = dLdZ.shape[2]
 
-        self.dLdW = None  # TODO
-        self.dLdb = None  # TODO
-        dLdA = None  # TODO
+        # Find dLdb
+        self.dLdb = np.sum(dLdZ, axis=(0,2))
 
-        return NotImplemented
+        # Find dLdW
+        self.dLdW = np.zeros(self.W.shape)
+        for o in range(self.kernel_size):
+            self.dLdW[:, :, o] = np.tensordot(dLdZ, self.A[:, :, o:o+output_size], axes=((0,2), (0,2)))
+        
+        # Find dLdA
+        dLdZ_padded = np.pad(dLdZ, ((0, 0), (0, 0), (self.kernel_size-1, self.kernel_size-1)), 'constant', constant_values=0)
+        W_flipped = np.flip(self.W, axis=2)
+
+        dLdA = np.zeros(self.A.shape)
+        for s in range(input_size): 
+            dLdA[:, :, s] = np.tensordot(dLdZ_padded[:, :, s:s+self.kernel_size], W_flipped, axes=((1, 2), (0, 2)))
+
+        return dLdA
 
 
 class Conv1d():
@@ -76,13 +94,13 @@ class Conv1d():
         """
 
         # Pad the input appropriately using np.pad() function
-        # TODO
+        # A_padded = np.pad(A, ((0, 0), (0, 0), (self.kernel_size-1, self.kernel_size-1)), 'constant', constant_values=(0,0))
 
-        # Call Conv1d_stride1
-        # TODO
+        # # Call Conv1d_stride1
+        # Z_stride1 = self.conv1d_stride1.forward(A_padded)
 
-        # downsample
-        Z = None  # TODO
+        # # downsample
+        # Z = self.downsample1d.forward(Z_stride1)
 
         return NotImplemented
 
@@ -94,12 +112,12 @@ class Conv1d():
             dLdA (np.array): (batch_size, in_channels, input_size)
         """
         # Call downsample1d backward
-        # TODO
+        # dLdZ_stride1 = self.downsampled1d.backward(dLdZ)
 
-        # Call Conv1d_stride1 backward
-        dLdA = None  # TODO
+        # # Call Conv1d_stride1 backward
+        # dLdA = self.conv1d_stride1.backward(dLdZ_stride1)
 
-        # Unpad the gradient
-        # TODO
+        # # Unpad the gradient
+        # dLdA_unpadded =
 
-        return NotImplemented
+        return dLdA_unpadded
