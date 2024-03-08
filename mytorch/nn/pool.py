@@ -2,6 +2,7 @@ import numpy as np
 from resampling import *
 
 
+# selects the largest from a pool of elements and is performed by “scanning” the input.
 class MaxPool2d_stride1():
 
     def __init__(self, kernel):
@@ -14,8 +15,17 @@ class MaxPool2d_stride1():
         Return:
             Z (np.array): (batch_size, out_channels, output_width, output_height)
         """
-        raise NotImplementedError
+        self.A = A
+        N, C, W_in, H_in = self.A.shape
+        W_out = W_in-self.kernel + 1
+        H_out = H_in-self.kernel + 1
 
+        Z = np.zeros((N, C, W_out, H_out))
+        for n, c, w, h in np.ndindex(N, C, W_out, H_out):
+            Z[n, c, w, h] = np.max(A[n, c, w:w+self.kernel, h:h+self.kernel])
+            
+        return Z
+    
     def backward(self, dLdZ):
         """
         Argument:
@@ -23,9 +33,15 @@ class MaxPool2d_stride1():
         Return:
             dLdA (np.array): (batch_size, in_channels, input_width, input_height)
         """
-        raise NotImplementedError
+        N, C, W_out, H_out = dLdZ.shape
+        dLdA = np.zeros(self.A.shape)
+        for n, c, w, h in np.ndindex(N, C, W_out, H_out):
+            A_window = self.A[n, c, w:w+self.kernel, h:h+self.kernel]
+            is_max = (A_window == np.max(A_window)) # 1: max val, 0: ow
+            dLdA[n, c, w:w+self.kernel, h:h+self.kernel] += is_max * dLdZ[n, c, w, h]
+        return dLdA
 
-
+#  takes the arithmetic mean of elements and is performed by “scanning” the input
 class MeanPool2d_stride1():
 
     def __init__(self, kernel):
