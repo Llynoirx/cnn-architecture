@@ -126,7 +126,6 @@ class MeanPool2d():
         self.meanpool2d_stride1 = MeanPool2d_stride1(self.kernel)
         self.downsample2d = Downsample2d(self.stride)
 
-
     def forward(self, A):
         """
         Argument:
@@ -134,7 +133,9 @@ class MeanPool2d():
         Return:
             Z (np.array): (batch_size, out_channels, output_width, output_height)
         """
-        raise NotImplementedError
+        Z_stride1 = self.meanpool2d_stride1.forward(A)
+        Z = self.downsample2d.forward(Z_stride1)
+        return Z
 
     def backward(self, dLdZ):
         """
@@ -143,4 +144,6 @@ class MeanPool2d():
         Return:
             dLdA (np.array): (batch_size, in_channels, input_width, input_height)
         """
-        raise NotImplementedError
+        dLdZ_stride1 = self.downsample2d.backward(dLdZ)
+        dLdA = self.meanpool2d_stride1.backward(dLdZ_stride1)
+        return dLdA
