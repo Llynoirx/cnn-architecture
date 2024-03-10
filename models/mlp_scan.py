@@ -36,9 +36,9 @@ class CNN_SimpleScanningMLP():
         #    3. Figure out appropriate reshape and transpose operations
 
         w1, w2, w3 = weights
-        self.conv1.conv1d_stride1.W = np.transpose(np.reshape(np.transpose(w1), (8, 8, 24)), (0, 2, 1)) 
-        self.conv2.conv1d_stride1.W = np.transpose(np.reshape(np.transpose(w2), (16, 1, 8)), (0, 2, 1))
-        self.conv3.conv1d_stride1.W = np.transpose(np.reshape(np.transpose(w3), (4, 1, 16)), (0, 2, 1))
+        self.conv1.conv1d_stride1.W = np.transpose(np.reshape(w1.T, (8, 8, 24)), (0, 2, 1)) 
+        self.conv2.conv1d_stride1.W = np.transpose(np.reshape(w2.T, (16, 1, 8)), (0, 2, 1))
+        self.conv3.conv1d_stride1.W = np.transpose(np.reshape(w3.T, (4, 1, 16)), (0, 2, 1))
 
 
     def forward(self, A):

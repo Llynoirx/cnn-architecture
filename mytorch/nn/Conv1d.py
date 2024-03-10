@@ -85,8 +85,9 @@ class Conv1d():
         self.pad = padding
 
         # Initialize Conv1d() and Downsample1d() isntance
-        self.conv1d_stride1 = Conv1d_stride1(in_channels, out_channels, kernel_size, weight_init_fn, bias_init_fn)
-        self.downsample1d = Downsample1d(stride)
+        self.conv1d_stride1 = Conv1d_stride1(in_channels, out_channels, kernel_size, 
+                                             weight_init_fn, bias_init_fn)
+        self.downsample1d = Downsample1d(self.stride)
 
     def forward(self, A):
         """
@@ -121,6 +122,6 @@ class Conv1d():
         dLdA = self.conv1d_stride1.backward(dLdZ_stride1)
 
         # Unpad the gradient
-        dLdA_unpadded = dLdA[self.pad:-self.pad]
+        dLdA_unpadded = dLdA[:, :, self.pad:-self.pad]
 
         return dLdA_unpadded
