@@ -41,7 +41,8 @@ class Conv1d_stride1():
         Z = np.zeros((N, self.out_channels, output_size))
 
         for s in range(output_size):
-            Z[:, :, s] = np.tensordot(self.A[:, :, s:s+self.kernel_size], self.W, axes=((1, 2), (1, 2))) + self.b
+            Z[:, :, s] = np.tensordot(self.A[:, :, s:s+self.kernel_size], 
+                                      self.W, axes=((1, 2), (1, 2))) + self.b
         return Z
 
     def backward(self, dLdZ):
@@ -59,16 +60,18 @@ class Conv1d_stride1():
 
         # Find dLdW
         self.dLdW = np.zeros(self.W.shape)
-        for o in range(self.kernel_size):
-            self.dLdW[:, :, o] = np.tensordot(dLdZ, self.A[:, :, o:o+output_size], axes=((0,2), (0,2)))
+        for i in range(self.kernel_size):
+            self.dLdW[:, :, i] = np.tensordot(dLdZ, self.A[:, :, i:i+output_size], axes=((0,2), (0,2)))
         
         # Find dLdA
-        dLdZ_padded = np.pad(dLdZ, ((0, 0), (0, 0), (self.kernel_size-1, self.kernel_size-1)), 'constant', constant_values=0)
+        dLdZ_padded = np.pad(dLdZ, ((0, 0), (0, 0), (self.kernel_size-1, self.kernel_size-1)), 
+                                    'constant', constant_values=0)
         W_flipped = np.flip(self.W, axis=2)
 
         dLdA = np.zeros(self.A.shape)
         for s in range(input_size): 
-            dLdA[:, :, s] = np.tensordot(dLdZ_padded[:, :, s:s+self.kernel_size], W_flipped, axes=((1, 2), (0, 2)))
+            dLdA[:, :, s] = np.tensordot(dLdZ_padded[:, :, s:s+self.kernel_size], W_flipped, 
+                                         axes=((1, 2), (0, 2)))
 
         return dLdA
 
@@ -118,6 +121,6 @@ class Conv1d():
         dLdA = self.conv1d_stride1.backward(dLdZ_stride1)
 
         # Unpad the gradient
-        dLdA_unpadded = dLdA[..., self.pad:-self.pad]
+        dLdA_unpadded = dLdA[self.pad:-self.pad]
 
         return dLdA_unpadded

@@ -21,20 +21,25 @@ class CNN_SimpleScanningMLP():
         # self.conv3 = ???
         # ...
         # <---------------------
-        self.conv1 = None
-        self.conv2 = None
-        self.conv3 = None
-        self.layers = [] # TODO: Add the layers in the correct order
+        self.conv1 = Conv1d(in_channels=24, out_channels=8, kernel_size=8, stride=4)
+        self.conv2 = Conv1d(in_channels=8, out_channels=16, kernel_size=1, stride=1)
+        self.conv3 = Conv1d(in_channels=16, out_channels=4, kernel_size=1, stride=1)
+        self.layers = [self.conv1, ReLU(), self.conv2, ReLU(), self.conv3, Flatten()]
+
 
     def init_weights(self, weights):
         # Load the weights for your CNN from the MLP Weights given
         # w1, w2, w3 contain the weights for the three layers of the MLP
         # Load them appropriately into the CNN
+        #    1. For each conv layer, have a look at the shape of its weight matrix
+        #    2. Look at the shapes of w1, w2 and w3
+        #    3. Figure out appropriate reshape and transpose operations
 
         w1, w2, w3 = weights
-        self.conv1.conv1d_stride1.W = None
-        self.conv2.conv1d_stride1.W = None
-        self.conv3.conv1d_stride1.W = None
+        self.conv1.conv1d_stride1.W = np.transpose(np.reshape(np.transpose(w1), (8, 8, 24)), (0, 2, 1)) 
+        self.conv2.conv1d_stride1.W = np.transpose(np.reshape(np.transpose(w2), (16, 1, 8)), (0, 2, 1))
+        self.conv3.conv1d_stride1.W = np.transpose(np.reshape(np.transpose(w3), (4, 1, 16)), (0, 2, 1))
+
 
     def forward(self, A):
         """

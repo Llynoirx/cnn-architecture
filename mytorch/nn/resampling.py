@@ -21,8 +21,7 @@ class Upsample1d():
         W_out = (W_in - 1)*self.upsampling_factor + 1
         Z = np.zeros((N, C, W_out))
 
-        idx = np.ndindex(N, C, W_in)
-        for n, c, w in idx:
+        for n, c, w in np.ndindex(N, C, W_in):
             Z[n, c, w*self.upsampling_factor] = A[n, c, w]
         
         return Z
@@ -39,8 +38,7 @@ class Upsample1d():
         W_in = (W_out - 1)//self.upsampling_factor + 1
         dLdA = np.zeros((N, C, W_in))
 
-        idx = np.ndindex(N, C, W_in)
-        for n, c, w in idx:
+        for n, c, w in np.ndindex(N, C, W_in):
             dLdA[n, c, w] = dLdZ[n, c, w*self.upsampling_factor]
 
         return dLdA
@@ -62,8 +60,7 @@ class Downsample1d():
         W_out = (self.W_in - 1)//self.downsampling_factor + 1
         Z = np.zeros((N, C, W_out))
 
-        idx = np.ndindex(N, C, W_out)
-        for n, c, w in idx:
+        for n, c, w in np.ndindex(N, C, W_out):
             Z[n, c, w] = A[n, c, w*self.downsampling_factor]
         return Z
 
@@ -77,8 +74,7 @@ class Downsample1d():
         N, C, W_out = dLdZ.shape
         dLdA = np.zeros((N, C, self.W_in))
 
-        idx = np.ndindex(N, C, W_out)
-        for n, c, w in idx:
+        for n, c, w in np.ndindex(N, C, W_out):
             dLdA[n, c, w*self.downsampling_factor] = dLdZ[n, c, w]
 
         return dLdA
@@ -102,8 +98,7 @@ class Upsample2d():
         W_out = (W_in - 1)*self.upsampling_factor + 1
         Z = np.zeros((N, C, H_out, W_out))
 
-        idx = np.ndindex(N, C, H_in, W_in)
-        for n, c, h, w in idx:
+        for n, c, h, w in np.ndindex(N, C, H_in, W_in):
             Z[n, c, h*self.upsampling_factor, w*self.upsampling_factor] = A[n, c, h, w]
 
         return Z
@@ -122,8 +117,7 @@ class Upsample2d():
         W_in = (W_out - 1)//self.upsampling_factor + 1
         dLdA = np.zeros((N, C, H_in, W_in))
 
-        idx = np.ndindex(N, C, H_in, W_in)
-        for n, c, h, w in idx:
+        for n, c, h, w in np.ndindex(N, C, H_in, W_in):
             dLdA[n, c, h, w] = dLdZ[n, c, h*self.upsampling_factor, w*self.upsampling_factor]
 
         return dLdA
@@ -147,8 +141,7 @@ class Downsample2d():
         W_out = (self.W_in - 1)//self.downsampling_factor + 1
         Z = np.zeros((N, C, H_out, W_out))
 
-        idx = np.ndindex(N, C, H_out, W_out)
-        for n, c, h, w in idx:
+        for n, c, h, w in np.ndindex(N, C, H_out, W_out):
             Z[n, c, h, w] = A[n, c, h*self.downsampling_factor, w*self.downsampling_factor]
         return Z
 
@@ -163,8 +156,7 @@ class Downsample2d():
         N, C, H_out, W_out = dLdZ.shape
         dLdA = np.zeros((N, C, self.H_in, self.W_in))
 
-        idx = np.ndindex(N, C, H_out, W_out)
-        for n, c, h, w in idx:
+        for n, c, h, w in np.ndindex(N, C, H_out, W_out):
             dLdA[n, c, h*self.downsampling_factor, w*self.downsampling_factor] = dLdZ[n, c, h, w]
 
         return dLdA
